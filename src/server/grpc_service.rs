@@ -29,6 +29,7 @@ use kvproto::errorpb::{Error as RegionError, ServerIsBusy};
 
 use util::worker::Scheduler;
 use util::buf::PipeBuffer;
+use util::escape;
 use storage::{self, Storage, Key, Options, Mutation};
 use storage::txn::Error as TxnError;
 use storage::mvcc::Error as MvccError;
@@ -181,6 +182,7 @@ impl<T: RaftStoreRouter + 'static> tikvpb_grpc::Tikv for Service<T> {
                     Op::Put => Mutation::Put((Key::from_raw(x.get_key()), x.take_value())),
                     Op::Del => Mutation::Delete(Key::from_raw(x.get_key())),
                     Op::Lock => Mutation::Lock(Key::from_raw(x.get_key())),
+                    _ => panic!("mismatch Op in prewrite mutations"),
                 }
             })
             .collect();
@@ -727,7 +729,7 @@ impl<T: RaftStoreRouter + 'static> tikvpb_grpc::Tikv for Service<T> {
                 } else {
                     match v {
                         Ok(Some((k, vv))) => {
-                            resp.set_key(k);
+                            resp.set_key(escape(k.encoded()).into_bytes());
                             resp.set_pairs(RepeatedField::from_vec(extract_mvcc_pairs(vv)))
                         }
                         Ok(None) => {
