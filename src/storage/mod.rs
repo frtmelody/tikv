@@ -240,7 +240,9 @@ impl Command {
             Command::Scan { .. } |
             Command::ScanLock { .. } |
             Command::RawGet { .. } |
-            Command::Pause { .. } => true,
+            Command::Pause { .. } |
+            Command::KeyMvcc { .. } |
+            Command::StarttsMvcc { .. } => true,
             Command::ResolveLock { ref keys, .. } |
             Command::Gc { ref keys, .. } => keys.is_empty(),
             _ => false,
