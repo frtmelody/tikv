@@ -382,7 +382,7 @@ dependencies = [
 [[package]]
 name = "kvproto"
 version = "0.0.1"
-source = "git+https://github.com/pingcap/kvproto.git?branch=hyq/txndebugger#62f0ff7913ba96e5fc01ccb48cf58f2aade94e25"
+source = "git+https://github.com/pingcap/kvproto.git?branch=hyq/txndebugger#9a452f440309f6d4761262b8d474d160d5e4ae16"
 dependencies = [
  "futures 0.1.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "grpc 0.1.0 (git+https://github.com/pingcap/grpc-rs.git)",
