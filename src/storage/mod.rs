@@ -292,11 +292,11 @@ impl Command {
             Command::Prewrite { start_ts, .. } |
             Command::Cleanup { start_ts, .. } |
             Command::Rollback { start_ts, .. } |
-            Command::ResolveLock { start_ts, .. } => start_ts,
+            Command::ResolveLock { start_ts, .. } |
+            Command::StartTsMvcc { start_ts, .. } => start_ts,
             Command::Commit { lock_ts, .. } => lock_ts,
             Command::ScanLock { max_ts, .. } => max_ts,
             Command::Gc { safe_point, .. } => safe_point,
-            Command::StartTsMvcc { start_ts, .. } => start_ts,
             Command::RawGet { .. } |
             Command::Pause { .. } |
             Command::KeyMvcc { .. } => 0,
