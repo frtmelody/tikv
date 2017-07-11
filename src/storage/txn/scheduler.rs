@@ -398,7 +398,7 @@ fn process_read(cid: u64, mut cmd: Command, ch: SyncSendCh<Msg>, snapshot: Box<S
             }
         }
         // Collects garbage.
-        Command::Gc { ref ctx, safe_point, ref mut scan_key, .. } => {
+        Command::Gc { ref ctx, safe_point, ref mut scan_key, ref options, .. } => {
             let mut reader = MvccReader::new(snapshot.as_ref(),
                                              &mut statistics,
                                              Some(ScanMode::Forward),
@@ -408,7 +408,12 @@ fn process_read(cid: u64, mut cmd: Command, ch: SyncSendCh<Msg>, snapshot: Box<S
             // scan_key is used as start_key here,and Range start gc with scan_key=none.
             let is_range_start_gc = scan_key.is_none();
             // This is an optimization to skip gc before scanning all data.
-            let res = if is_range_start_gc && !reader.need_gc(safe_point) {
+            let need_gc = if is_range_start_gc {
+                reader.need_gc(safe_point, options.gc_ratio_threshold)
+            } else {
+                true
+            };
+            let res = if !need_gc {
                 KV_COMMAND_GC_SKIPPED_COUNTER.inc();
                 Ok(None)
             } else {
@@ -429,6 +434,7 @@ fn process_read(cid: u64, mut cmd: Command, ch: SyncSendCh<Msg>, snapshot: Box<S
                                 safe_point: safe_point,
                                 scan_key: next_start,
                                 keys: keys,
+                                options: options.clone(),
                             }))
                         }
                     })
@@ -588,7 +594,7 @@ fn process_write_impl(cid: u64,
                 (pr, txn.modifies())
             }
         }
-        Command::Gc { ref ctx, safe_point, ref mut scan_key, ref keys } => {
+        Command::Gc { ref ctx, safe_point, ref mut scan_key, ref keys, ref options } => {
             let mut scan_key = scan_key.take();
             let mut txn = MvccTxn::new(snapshot,
                                        &mut statistics,
@@ -611,6 +617,7 @@ fn process_write_impl(cid: u64,
                         safe_point: safe_point,
                         scan_key: scan_key.take(),
                         keys: vec![],
+                        options: options.clone(),
                     },
                 };
                 (pr, txn.modifies())
@@ -989,6 +996,7 @@ mod tests {
                                      safe_point: 5,
                                      scan_key: None,
                                      keys: vec![make_key(b"k")],
+                                     options: Options::default(),
                                  }];
         let write_cmds = vec![Command::Prewrite {
                                   ctx: Context::new(),
